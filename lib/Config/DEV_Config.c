@@ -121,7 +121,9 @@ void DEV_SPI_WriteByte(uint8_t Value)
 	if (wiringx_spi_fd < 0) {
 		wiringx_spi_fd = wiringXSPISetup(0, 10000000); // Channel 0, 10MHz
 		if (wiringx_spi_fd < 0) {
-			printf("Failed to initialize SPI with WiringX\n");
+			printf("Failed to initialize SPI with WiringX - SPI may not be enabled on this board\n");
+			// Fall back to bit-banged SPI if needed
+			DEV_SPI_SendData(Value);
 			return;
 		}
 	}
@@ -156,7 +158,11 @@ void DEV_SPI_Write_nByte(uint8_t *pData, uint32_t Len)
 	if (wiringx_spi_fd < 0) {
 		wiringx_spi_fd = wiringXSPISetup(0, 10000000); // Channel 0, 10MHz
 		if (wiringx_spi_fd < 0) {
-			printf("Failed to initialize SPI with WiringX\n");
+			printf("Failed to initialize SPI with WiringX - SPI may not be enabled on this board\n");
+			// Fall back to bit-banged SPI if needed
+			for(UDOUBLE i = 0; i < Len; i++) {
+				DEV_SPI_SendData(pData[i]);
+			}
 			return;
 		}
 	}
@@ -333,13 +339,15 @@ void DEV_GPIO_Init(void)
 {
 #ifdef RPI
 #ifdef USE_WIRINGX_LIB
-	EPD_RST_PIN     = 13;  // B12 - Physical pin 13
-	EPD_DC_PIN      = 15;  // B22 - Physical pin 15
-	EPD_CS_PIN      = 24;  // B16 - Physical pin 24
-    	EPD_PWR_PIN     = 17;  // vcc
-	EPD_BUSY_PIN    = 11;  // B11 - Physical pin 11
-    	EPD_MOSI_PIN    = 19;  // B13 - Physical pin 19
-	EPD_SCLK_PIN    = 23;  // B15 - Physical pin 23
+	// Using correct GPIO pin numbers for Milk-V Duo S
+	// Based on duos-pins.txt mapping
+	EPD_RST_PIN     = 13;   // B12 - Physical pin 13
+	EPD_DC_PIN      = 15;   // B22 - Physical pin 15
+	EPD_CS_PIN      = 24;   // B16 - Physical pin 24
+    	EPD_PWR_PIN     = 18;   // Using pin 18 instead of 17 which seems invalid
+	EPD_BUSY_PIN    = 11;   // B11 - Physical pin 11
+    	EPD_MOSI_PIN    = 19;   // B13 - Physical pin 19
+	EPD_SCLK_PIN    = 23;   // B15 - Physical pin 23
 	
 	printf("Setting up WiringX pins:\n");
 	printf("  RST_PIN: %d\n", EPD_RST_PIN);
@@ -493,13 +501,8 @@ UBYTE DEV_Module_Init(void)
 	// GPIO Config
 	DEV_GPIO_Init();
 	
-	// SPI Config - assuming channel 0, speed 10MHz, mode 0
-	// Note: This is a placeholder - actual implementation depends on WiringX SPI API
-	// int spi_fd = wiringXSPISetup(0, 10000000);
-	// if(spi_fd < 0) {
-	// 	printf("SPI setup failed !!! \r\n");
-	// 	return 1;
-	// }
+	// Note: For Milk-V Duo S, SPI might need to be handled differently
+	// We'll initialize SPI on first use in DEV_SPI_WriteByte/DEV_SPI_Write_nByte
 #elif  USE_LGPIO_LIB
     char buffer[NUM_MAXBUF];
     FILE *fp;

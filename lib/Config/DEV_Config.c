@@ -210,14 +210,11 @@ void DEV_GPIO_Mode(UWORD Pin, UWORD Mode)
 #elif USE_WIRINGX_LIB
 	// For WiringX, we just call pinMode without checking return value
 	// as the error messages are handled by WiringX internally
-	pinMode(Pin, PINMODE_INPUT);
-#else
 	if(Mode == 0 || Mode == PINMODE_INPUT) {
 		pinMode(Pin, PINMODE_INPUT);
 	} else {
 		pinMode(Pin, PINMODE_OUTPUT);
 	}
-#endif
 #elif  USE_LGPIO_LIB  
     if(Mode == 0 || Mode == LG_SET_INPUT){
         lgGpioClaimInput(GPIO_Handle,LFLAGS,Pin);

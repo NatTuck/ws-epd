@@ -208,20 +208,16 @@ void DEV_GPIO_Mode(UWORD Pin, UWORD Mode)
 		// Debug (" %d OUT \r\n",Pin);
 	}
 #elif USE_WIRINGX_LIB
-	printf("Setting pin %d to mode %d\n", Pin, Mode);
+	// For WiringX, we just call pinMode without checking return value
+	// as the error messages are handled by WiringX internally
+	pinMode(Pin, PINMODE_INPUT);
+#else
 	if(Mode == 0 || Mode == PINMODE_INPUT) {
-		if(pinMode(Pin, PINMODE_INPUT) < 0) {
-			printf("Failed to set pin %d as INPUT\n", Pin);
-		} else {
-			printf("Pin %d set as INPUT\n", Pin);
-		}
+		pinMode(Pin, PINMODE_INPUT);
 	} else {
-		if(pinMode(Pin, PINMODE_OUTPUT) < 0) {
-			printf("Failed to set pin %d as OUTPUT\n", Pin);
-		} else {
-			printf("Pin %d set as OUTPUT\n", Pin);
-		}
+		pinMode(Pin, PINMODE_OUTPUT);
 	}
+#endif
 #elif  USE_LGPIO_LIB  
     if(Mode == 0 || Mode == LG_SET_INPUT){
         lgGpioClaimInput(GPIO_Handle,LFLAGS,Pin);
@@ -344,7 +340,7 @@ void DEV_GPIO_Init(void)
 	EPD_RST_PIN     = 13;   // B12 - Physical pin 13
 	EPD_DC_PIN      = 15;   // B22 - Physical pin 15
 	EPD_CS_PIN      = 24;   // B16 - Physical pin 24
-    	EPD_PWR_PIN     = 18;   // Using pin 18 instead of 17 which seems invalid
+    	EPD_PWR_PIN     = 18;   // Using pin 18
 	EPD_BUSY_PIN    = 11;   // B11 - Physical pin 11
     	EPD_MOSI_PIN    = 19;   // B13 - Physical pin 19
 	EPD_SCLK_PIN    = 23;   // B15 - Physical pin 23
@@ -402,7 +398,6 @@ void DEV_SPI_SendnData(UBYTE *Reg)
 void DEV_SPI_SendData(UBYTE Reg)
 {
 	UBYTE i,j=Reg;
-	DEV_GPIO_Mode(EPD_MOSI_PIN, 1);
 	DEV_Digital_Write(EPD_CS_PIN, 0);
 	for(i = 0; i<8; i++)
     {

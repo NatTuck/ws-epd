@@ -62,6 +62,8 @@
     #elif USE_WIRINGPI_LIB
         #include <wiringPi.h>
         #include <wiringPiSPI.h>
+    #elif USE_WIRINGX_LIB
+        #include <wiringx.h>
     #elif USE_LGPIO_LIB
         #include <lgpio.h>
         #define LFLAGS 0

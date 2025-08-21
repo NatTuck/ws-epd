@@ -55,6 +55,8 @@ void DEV_Digital_Write(UWORD Pin, UBYTE Value)
 	bcm2835_gpio_write(Pin, Value);
 #elif USE_WIRINGPI_LIB
 	digitalWrite(Pin, Value);
+#elif USE_WIRINGX_LIB
+	digitalWrite(Pin, Value);
 #elif  USE_LGPIO_LIB  
     lgGpioWrite(GPIO_Handle, Pin, Value);
 #elif USE_DEV_LIB
@@ -78,6 +80,8 @@ UBYTE DEV_Digital_Read(UWORD Pin)
 #ifdef USE_BCM2835_LIB
 	Read_value = bcm2835_gpio_lev(Pin);
 #elif USE_WIRINGPI_LIB
+	Read_value = digitalRead(Pin);
+#elif USE_WIRINGX_LIB
 	Read_value = digitalRead(Pin);
 #elif  USE_LGPIO_LIB  
     Read_value = lgGpioRead(GPIO_Handle,Pin);
@@ -106,6 +110,9 @@ void DEV_SPI_WriteByte(uint8_t Value)
 	bcm2835_spi_transfer(Value);
 #elif USE_WIRINGPI_LIB
 	wiringPiSPIDataRW(0,&Value,1);
+#elif USE_WIRINGX_LIB
+	// For WiringX, we'll need to implement this with wiringXSPIDataRW
+	// This is a placeholder - actual implementation depends on how WiringX SPI is initialized
 #elif  USE_LGPIO_LIB 
     lgSpiWrite(SPI_Handle,(char*)&Value, 1);
 #elif USE_DEV_LIB
@@ -130,6 +137,9 @@ void DEV_SPI_Write_nByte(uint8_t *pData, uint32_t Len)
 	bcm2835_spi_transfernb((char *)pData,rData,Len);
 #elif USE_WIRINGPI_LIB
 	wiringPiSPIDataRW(0, pData, Len);
+#elif USE_WIRINGX_LIB
+	// For WiringX, we'll need to implement this with wiringXSPIDataRW
+	// This is a placeholder - actual implementation depends on how WiringX SPI is initialized
 #elif  USE_LGPIO_LIB 
     lgSpiWrite(SPI_Handle,(char*)pData, Len);
 #elif USE_DEV_LIB
@@ -170,6 +180,12 @@ void DEV_GPIO_Mode(UWORD Pin, UWORD Mode)
 		pinMode(Pin, OUTPUT);
 		// Debug (" %d OUT \r\n",Pin);
 	}
+#elif USE_WIRINGX_LIB
+	if(Mode == 0 || Mode == PINMODE_INPUT) {
+		pinMode(Pin, PINMODE_INPUT);
+	} else {
+		pinMode(Pin, PINMODE_OUTPUT);
+	}
 #elif  USE_LGPIO_LIB  
     if(Mode == 0 || Mode == LG_SET_INPUT){
         lgGpioClaimInput(GPIO_Handle,LFLAGS,Pin);
@@ -209,6 +225,12 @@ void DEV_Delay_ms(UDOUBLE xms)
 	bcm2835_delay(xms);
 #elif USE_WIRINGPI_LIB
 	delay(xms);
+#elif USE_WIRINGX_LIB
+	// WiringX doesn't have a direct delay function, so we'll use usleep
+	UDOUBLE i;
+	for(i=0; i < xms; i++) {
+		usleep(1000);
+	}
 #elif  USE_LGPIO_LIB  
     lguSleep(xms/1000.0);
 #elif USE_DEV_LIB
@@ -280,6 +302,15 @@ static int DEV_Equipment_Testing(void)
 void DEV_GPIO_Init(void)
 {
 #ifdef RPI
+#ifdef USE_WIRINGX_LIB
+	EPD_RST_PIN     = 13;  // B12 - Physical pin 13
+	EPD_DC_PIN      = 15;  // B22 - Physical pin 15
+	EPD_CS_PIN      = 24;  // B16 - Physical pin 24
+    EPD_PWR_PIN     = 11;  // B11 - Physical pin 11
+	EPD_BUSY_PIN    = 24;  // B16 - Physical pin 24 (same as CS in some configurations)
+    EPD_MOSI_PIN    = 19;  // B13 - Physical pin 19
+	EPD_SCLK_PIN    = 23;  // B15 - Physical pin 23
+#else
 	EPD_RST_PIN     = 17;
 	EPD_DC_PIN      = 25;
 	EPD_CS_PIN      = 8;
@@ -287,6 +318,7 @@ void DEV_GPIO_Init(void)
 	EPD_BUSY_PIN    = 24;
     EPD_MOSI_PIN    = 10;
 	EPD_SCLK_PIN    = 11;
+#endif
 #elif JETSON
 	EPD_RST_PIN     = GPIO17;
 	EPD_DC_PIN      = GPIO25;
@@ -411,6 +443,24 @@ UBYTE DEV_Module_Init(void)
 	DEV_GPIO_Init();
 	wiringPiSPISetup(0,10000000);
 	// wiringPiSPISetupMode(0, 32000000, 0);
+#elif USE_WIRINGX_LIB
+	if(wiringXSetup("duo", NULL) < 0) {
+		printf("set wiringX lib failed !!! \r\n");
+		return 1;
+	} else {
+		printf("set wiringX lib success !!! \r\n");
+	}
+
+	// GPIO Config
+	DEV_GPIO_Init();
+	
+	// SPI Config - assuming channel 0, speed 10MHz, mode 0
+	// Note: This is a placeholder - actual implementation depends on WiringX SPI API
+	// int spi_fd = wiringXSPISetup(0, 10000000);
+	// if(spi_fd < 0) {
+	// 	printf("SPI setup failed !!! \r\n");
+	// 	return 1;
+	// }
 #elif  USE_LGPIO_LIB
     char buffer[NUM_MAXBUF];
     FILE *fp;
@@ -488,6 +538,12 @@ void DEV_Module_Exit(void)
     DEV_Digital_Write(EPD_PWR_PIN, 0);
 	DEV_Digital_Write(EPD_DC_PIN, 0);
 	DEV_Digital_Write(EPD_RST_PIN, 0);
+#elif USE_WIRINGX_LIB
+	DEV_Digital_Write(EPD_CS_PIN, 0);
+    DEV_Digital_Write(EPD_PWR_PIN, 0);
+	DEV_Digital_Write(EPD_DC_PIN, 0);
+	DEV_Digital_Write(EPD_RST_PIN, 0);
+	// Add WiringX cleanup code here if needed
 #elif USE_LGPIO_LIB 
     // DEV_Digital_Write(EPD_CS_PIN, 0);
     // DEV_Digital_Write(EPD_PWR_PIN, 0);

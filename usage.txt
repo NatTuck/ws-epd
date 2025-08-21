@@ -1,0 +1,1 @@
+make RPI EPD=epd2in9V2 USELIB_RPI=USE_WIRINGX_LIB      

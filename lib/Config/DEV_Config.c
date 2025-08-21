@@ -306,17 +306,17 @@ void DEV_GPIO_Init(void)
 	EPD_RST_PIN     = 13;  // B12 - Physical pin 13
 	EPD_DC_PIN      = 15;  // B22 - Physical pin 15
 	EPD_CS_PIN      = 24;  // B16 - Physical pin 24
-    EPD_PWR_PIN     = 11;  // B11 - Physical pin 11
-	EPD_BUSY_PIN    = 24;  // B16 - Physical pin 24 (same as CS in some configurations)
-    EPD_MOSI_PIN    = 19;  // B13 - Physical pin 19
+    	EPD_PWR_PIN     = 17;  // vcc
+	EPD_BUSY_PIN    = 11;  // B11 - Physical pin 24
+    	EPD_MOSI_PIN    = 19;  // B13 - Physical pin 19
 	EPD_SCLK_PIN    = 23;  // B15 - Physical pin 23
 #else
 	EPD_RST_PIN     = 17;
 	EPD_DC_PIN      = 25;
 	EPD_CS_PIN      = 8;
-    EPD_PWR_PIN     = 18;
+    	EPD_PWR_PIN     = 18;
 	EPD_BUSY_PIN    = 24;
-    EPD_MOSI_PIN    = 10;
+    	EPD_MOSI_PIN    = 10;
 	EPD_SCLK_PIN    = 11;
 #endif
 #elif JETSON
@@ -444,7 +444,7 @@ UBYTE DEV_Module_Init(void)
 	wiringPiSPISetup(0,10000000);
 	// wiringPiSPISetupMode(0, 32000000, 0);
 #elif USE_WIRINGX_LIB
-	if(wiringXSetup("duo", NULL) < 0) {
+	if(wiringXSetup("milkv_duos", NULL) < 0) {
 		printf("set wiringX lib failed !!! \r\n");
 		return 1;
 	} else {

@@ -242,7 +242,9 @@ else ifeq ($(USELIB_RPI), USE_WIRINGPI_LIB)
 else ifeq ($(USELIB_RPI), USE_LGPIO_LIB)
 	LIB_RPI += -llgpio -lm
 else ifeq ($(USELIB_RPI), USE_DEV_LIB)
-	LIB_RPI += -lgpiod -lm 
+	LIB_RPI += -lgpiod -lm
+else ifeq ($(USELIB_RPI), USE_WIRINGX_LIB)
+	LIB_RPI += -lwiringx -lm
 endif
 DEBUG_RPI = -D $(USELIB_RPI) -D RPI
 

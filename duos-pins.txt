@@ -1,0 +1,10 @@
+epd   duos  duos-name
+
+busy  11    B11
+rst   13    B12
+dc    15    B22
+cs    24    B16
+clk   23    B15
+din   19    B13
+gnd   25
+vcc   17

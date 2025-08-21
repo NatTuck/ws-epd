@@ -483,7 +483,7 @@ UBYTE DEV_Module_Init(void)
 	wiringPiSPISetup(0,10000000);
 	// wiringPiSPISetupMode(0, 32000000, 0);
 #elif USE_WIRINGX_LIB
-	if(wiringXSetup("milkv_duos", NULL) < 0) {
+	if(wiringXSetup("duo", NULL) < 0) {
 		printf("set wiringX lib failed !!! \r\n");
 		return 1;
 	} else {

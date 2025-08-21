@@ -121,7 +121,6 @@ void DEV_SPI_WriteByte(uint8_t Value)
 	if (wiringx_spi_fd < 0) {
 		wiringx_spi_fd = wiringXSPISetup(0, 10000000); // Channel 0, 10MHz
 		if (wiringx_spi_fd < 0) {
-			printf("Failed to initialize SPI with WiringX - SPI may not be enabled on this board\n");
 			// Fall back to bit-banged SPI if needed
 			DEV_SPI_SendData(Value);
 			return;
@@ -158,7 +157,6 @@ void DEV_SPI_Write_nByte(uint8_t *pData, uint32_t Len)
 	if (wiringx_spi_fd < 0) {
 		wiringx_spi_fd = wiringXSPISetup(0, 10000000); // Channel 0, 10MHz
 		if (wiringx_spi_fd < 0) {
-			printf("Failed to initialize SPI with WiringX - SPI may not be enabled on this board\n");
 			// Fall back to bit-banged SPI if needed
 			for(UDOUBLE i = 0; i < Len; i++) {
 				DEV_SPI_SendData(pData[i]);
@@ -395,6 +393,11 @@ void DEV_SPI_SendnData(UBYTE *Reg)
 void DEV_SPI_SendData(UBYTE Reg)
 {
 	UBYTE i,j=Reg;
+	
+	// Ensure MOSI and SCLK pins are set as outputs
+	DEV_GPIO_Mode(EPD_MOSI_PIN, 1);
+	DEV_GPIO_Mode(EPD_SCLK_PIN, 1);
+	
 	DEV_Digital_Write(EPD_CS_PIN, 0);
 	for(i = 0; i<8; i++)
     {

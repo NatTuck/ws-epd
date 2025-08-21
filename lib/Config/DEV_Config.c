@@ -337,9 +337,18 @@ void DEV_GPIO_Init(void)
 	EPD_DC_PIN      = 15;  // B22 - Physical pin 15
 	EPD_CS_PIN      = 24;  // B16 - Physical pin 24
     	EPD_PWR_PIN     = 17;  // vcc
-	EPD_BUSY_PIN    = 11;  // B11 - Physical pin 24
+	EPD_BUSY_PIN    = 11;  // B11 - Physical pin 11
     	EPD_MOSI_PIN    = 19;  // B13 - Physical pin 19
 	EPD_SCLK_PIN    = 23;  // B15 - Physical pin 23
+	
+	printf("Setting up WiringX pins:\n");
+	printf("  RST_PIN: %d\n", EPD_RST_PIN);
+	printf("  DC_PIN: %d\n", EPD_DC_PIN);
+	printf("  CS_PIN: %d\n", EPD_CS_PIN);
+	printf("  PWR_PIN: %d\n", EPD_PWR_PIN);
+	printf("  BUSY_PIN: %d\n", EPD_BUSY_PIN);
+	printf("  MOSI_PIN: %d\n", EPD_MOSI_PIN);
+	printf("  SCLK_PIN: %d\n", EPD_SCLK_PIN);
 #else
 	EPD_RST_PIN     = 17;
 	EPD_DC_PIN      = 25;

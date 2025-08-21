@@ -34,6 +34,12 @@ int GPIO_Handle;
 int SPI_Handle;
 #endif
 
+#ifdef RPI
+#ifdef USE_WIRINGX_LIB
+static int wiringx_spi_fd = -1;
+#endif
+#endif
+
 /**
  * GPIO
 **/
@@ -111,8 +117,16 @@ void DEV_SPI_WriteByte(uint8_t Value)
 #elif USE_WIRINGPI_LIB
 	wiringPiSPIDataRW(0,&Value,1);
 #elif USE_WIRINGX_LIB
-	// For WiringX, we'll need to implement this with wiringXSPIDataRW
-	// This is a placeholder - actual implementation depends on how WiringX SPI is initialized
+	// WiringX SPI implementation
+	if (wiringx_spi_fd < 0) {
+		wiringx_spi_fd = wiringXSPISetup(0, 10000000); // Channel 0, 10MHz
+		if (wiringx_spi_fd < 0) {
+			printf("Failed to initialize SPI with WiringX\n");
+			return;
+		}
+	}
+	unsigned char data = Value;
+	wiringXSPIDataRW(0, &data, 1);
 #elif  USE_LGPIO_LIB 
     lgSpiWrite(SPI_Handle,(char*)&Value, 1);
 #elif USE_DEV_LIB
@@ -138,8 +152,15 @@ void DEV_SPI_Write_nByte(uint8_t *pData, uint32_t Len)
 #elif USE_WIRINGPI_LIB
 	wiringPiSPIDataRW(0, pData, Len);
 #elif USE_WIRINGX_LIB
-	// For WiringX, we'll need to implement this with wiringXSPIDataRW
-	// This is a placeholder - actual implementation depends on how WiringX SPI is initialized
+	// WiringX SPI implementation
+	if (wiringx_spi_fd < 0) {
+		wiringx_spi_fd = wiringXSPISetup(0, 10000000); // Channel 0, 10MHz
+		if (wiringx_spi_fd < 0) {
+			printf("Failed to initialize SPI with WiringX\n");
+			return;
+		}
+	}
+	wiringXSPIDataRW(0, pData, Len);
 #elif  USE_LGPIO_LIB 
     lgSpiWrite(SPI_Handle,(char*)pData, Len);
 #elif USE_DEV_LIB
@@ -181,10 +202,19 @@ void DEV_GPIO_Mode(UWORD Pin, UWORD Mode)
 		// Debug (" %d OUT \r\n",Pin);
 	}
 #elif USE_WIRINGX_LIB
+	printf("Setting pin %d to mode %d\n", Pin, Mode);
 	if(Mode == 0 || Mode == PINMODE_INPUT) {
-		pinMode(Pin, PINMODE_INPUT);
+		if(pinMode(Pin, PINMODE_INPUT) < 0) {
+			printf("Failed to set pin %d as INPUT\n", Pin);
+		} else {
+			printf("Pin %d set as INPUT\n", Pin);
+		}
 	} else {
-		pinMode(Pin, PINMODE_OUTPUT);
+		if(pinMode(Pin, PINMODE_OUTPUT) < 0) {
+			printf("Failed to set pin %d as OUTPUT\n", Pin);
+		} else {
+			printf("Pin %d set as OUTPUT\n", Pin);
+		}
 	}
 #elif  USE_LGPIO_LIB  
     if(Mode == 0 || Mode == LG_SET_INPUT){
@@ -543,7 +573,16 @@ void DEV_Module_Exit(void)
     DEV_Digital_Write(EPD_PWR_PIN, 0);
 	DEV_Digital_Write(EPD_DC_PIN, 0);
 	DEV_Digital_Write(EPD_RST_PIN, 0);
-	// Add WiringX cleanup code here if needed
+	
+	// Close SPI if it was opened
+	if (wiringx_spi_fd >= 0) {
+		// WiringX doesn't seem to have a specific SPI close function
+		// Just set the fd to -1 to indicate it's closed
+		wiringx_spi_fd = -1;
+	}
+	
+	// Call WiringX cleanup function
+	wiringXGC();
 #elif USE_LGPIO_LIB 
     // DEV_Digital_Write(EPD_CS_PIN, 0);
     // DEV_Digital_Write(EPD_PWR_PIN, 0);

@@ -37,6 +37,7 @@ int SPI_Handle;
 #ifdef RPI
 #ifdef USE_WIRINGX_LIB
 static int wiringx_spi_fd = -1;
+static int spi_init_attempted = 0;  // Flag to track if we've already tried to init SPI
 #endif
 #endif
 
@@ -118,13 +119,20 @@ void DEV_SPI_WriteByte(uint8_t Value)
 	wiringPiSPIDataRW(0,&Value,1);
 #elif USE_WIRINGX_LIB
 	// WiringX SPI implementation
-	if (wiringx_spi_fd < 0) {
+	if (wiringx_spi_fd < 0 && !spi_init_attempted) {
 		wiringx_spi_fd = wiringXSPISetup(0, 10000000); // Channel 0, 10MHz
+		spi_init_attempted = 1;  // Mark that we've attempted SPI initialization
 		if (wiringx_spi_fd < 0) {
+			printf("WARNING: wiringX is unable to open SPI device /dev/spidev0.0 (No such file or directory)\n");
+			printf("Falling back to bit-banged SPI implementation\n");
 			// Fall back to bit-banged SPI if needed
 			DEV_SPI_SendData(Value);
 			return;
 		}
+	} else if (wiringx_spi_fd < 0) {
+		// SPI already failed before, use fallback directly
+		DEV_SPI_SendData(Value);
+		return;
 	}
 	unsigned char data = Value;
 	wiringXSPIDataRW(0, &data, 1);
@@ -154,15 +162,24 @@ void DEV_SPI_Write_nByte(uint8_t *pData, uint32_t Len)
 	wiringPiSPIDataRW(0, pData, Len);
 #elif USE_WIRINGX_LIB
 	// WiringX SPI implementation
-	if (wiringx_spi_fd < 0) {
+	if (wiringx_spi_fd < 0 && !spi_init_attempted) {
 		wiringx_spi_fd = wiringXSPISetup(0, 10000000); // Channel 0, 10MHz
+		spi_init_attempted = 1;  // Mark that we've attempted SPI initialization
 		if (wiringx_spi_fd < 0) {
+			printf("WARNING: wiringX is unable to open SPI device /dev/spidev0.0 (No such file or directory)\n");
+			printf("Falling back to bit-banged SPI implementation\n");
 			// Fall back to bit-banged SPI if needed
 			for(UDOUBLE i = 0; i < Len; i++) {
 				DEV_SPI_SendData(pData[i]);
 			}
 			return;
 		}
+	} else if (wiringx_spi_fd < 0) {
+		// SPI already failed before, use fallback directly
+		for(UDOUBLE i = 0; i < Len; i++) {
+			DEV_SPI_SendData(pData[i]);
+		}
+		return;
 	}
 	wiringXSPIDataRW(0, pData, Len);
 #elif  USE_LGPIO_LIB 
